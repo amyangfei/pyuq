@@ -67,7 +67,14 @@ class UqClusterClient(Client):
         self._etcd_port = etcd_port
         self._etcd_key = etcd_key
         self._etcd_cli = None
-        self._kwargs = kwargs
+        _kwargs = {}
+        for k, v in kwargs.iteritems():
+            # use prefix '_etcd_' to avoid name confliction with
+            # positional arguments
+            if k.startswith('_etcd_'):
+                k = k[len('_etcd_'):]
+            _kwargs[k] = v
+        self._kwargs = _kwargs
         super(UqClusterClient, self).__init__(protocol)
 
     @property

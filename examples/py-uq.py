@@ -27,7 +27,20 @@ def main(args):
     if args.etcd == '':
         cli = UqClient(args.protocol, args.ip, args.port)
     else:
-        cli = UqClusterClient(args.protocol, args.etcd, args.cluster)
+        kwargs = {}
+        if args.etcd.startswith('http'):
+            kwargs['_etcd_protocol'] = args.etcd[:args.etcd.index(':')]
+            netloc = args.etcd[args.etcd.index('://')+3:]
+        else:
+            netloc = args.etcd
+        if ':' in netloc:
+            etcd_host = netloc[:netloc.index(':')]
+            etcd_port = int(netloc[netloc.index(':')+1:])
+        else:
+            etcd_host = netloc
+            etcd_port = 4001
+        cli = UqClusterClient(
+            args.protocol, etcd_host, etcd_port, args.cluster, **kwargs)
 
     recycle = datetime.timedelta(seconds=10)
     success, info = cli.add(args.topic, '', 0)

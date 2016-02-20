@@ -2,6 +2,7 @@
 
 import random
 import logging
+import functools
 
 import etcd
 import requests
@@ -13,7 +14,7 @@ from .utils import timedetla_to_str
 
 def query_addrs(etcd_cli, etcd_key):
     try:
-        resp = etcd_cli.read(etcd_key + '_servers', sorted=True, recursive=False)
+        resp = etcd_cli.read('/{}/servers'.format(etcd_key), sorted=True, recursive=False)
     except etcd.EtcdKeyNotFound:
         raise
     if not resp.dir:
@@ -146,6 +147,17 @@ class Conn(object):
         return False, 'all conn del failed after retry'
 
 
+def catch_requests_error(func):
+    @functools.wraps(func)
+    def wrap_f(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except requests.RequestException, e:
+            logging.error('requests error: {}'.format(e))
+            return None
+    return wrap_f
+
+
 class HttpConn(Conn):
     '''
     Http protocol based connection between uq client and uq server
@@ -165,6 +177,7 @@ class HttpConn(Conn):
         else:
             self.addrs = [x for x in query_addrs(self.etcd_cli, self.etcd_key)]
 
+    @catch_requests_error
     def _add(self, addr, data):
         url = 'http://{0}/v1/queues'.format(addr)
         r = requests.put(url, data)
@@ -176,6 +189,7 @@ class HttpConn(Conn):
             logging.error('add error: {}'.format(r.text))
             return None
 
+    @catch_requests_error
     def _push(self, addr, data):
         key = data.pop('key')
         url = 'http://{0}/v1/queues/{1}'.format(addr, key)
@@ -186,6 +200,7 @@ class HttpConn(Conn):
             logging.error('push error: {}'.format(r.text))
             return None
 
+    @catch_requests_error
     def _pop(self, addrs, data):
         nomsg = 0
         for addr in self.addrs:
@@ -203,6 +218,7 @@ class HttpConn(Conn):
             return False, '', 'no message'
         return None
 
+    @catch_requests_error
     def _remove(self, addr, data):
         url = 'http://{0}/v1/queues/{1}'.format(addr, data['cid'])
         r = requests.delete(url)
