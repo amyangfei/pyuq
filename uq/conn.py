@@ -5,6 +5,7 @@ import logging
 import functools
 
 import etcd
+import redis
 import requests
 
 from .exceptions import UqError, UqNotImplementedError
@@ -34,6 +35,11 @@ class Conn(object):
         self.etcd_key = etcd_key
         self.addrs = None
         self._update_conn_pool()
+
+    def _choose(self):
+        if len(self.addrs) == 0:
+            return None
+        return random.choice(self.addrs)
 
     def _update_conn_pool(self):
         raise UqNotImplementedError
@@ -166,11 +172,6 @@ class HttpConn(Conn):
     def __init__(self, addr, etcd_cli, etcd_key):
         super(HttpConn, self).__init__(addr, etcd_cli, etcd_key)
 
-    def _choose(self):
-        if len(self.addrs) == 0:
-            return None
-        return random.choice(self.addrs)
-
     def _update_conn_pool(self):
         if self.etcd_cli is None:
             self.addrs = [self.addr]
@@ -203,7 +204,7 @@ class HttpConn(Conn):
     @catch_requests_error
     def _pop(self, addrs, data):
         nomsg = 0
-        for addr in self.addrs:
+        for addr in addrs:
             url = 'http://{0}/v1/queues/{1}'.format(addr, data['key'])
             r = requests.get(url)
             if r.status_code == requests.codes.not_found:
@@ -214,7 +215,7 @@ class HttpConn(Conn):
                 return True, cid, value
             else:
                 logging.error('pop error: {}'.format(r.text))
-        if nomsg == len(self.addrs):
+        if nomsg == len(addrs):
             return False, '', 'no message'
         return None
 
@@ -229,6 +230,17 @@ class HttpConn(Conn):
             return None
 
 
+def catch_redis_error(func):
+    @functools.wraps(func)
+    def wrap_f(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except redis.RedisError, e:
+            logging.error('redis error: {}'.format(e))
+            return None
+    return wrap_f
+
+
 class RedisConn(Conn):
     '''
     RESP protocol based connection between uq client and uq server
@@ -237,17 +249,76 @@ class RedisConn(Conn):
     def __init__(self, addr, etcd_cli, etcd_key):
         super(RedisConn, self).__init__(addr, etcd_cli, etcd_key)
 
-    def add(self, topic, line, recycle):
-        pass
+    def _update_conn_pool(self):
+        if self.etcd_cli is None:
+            self.addrs = [self.addr]
+        else:
+            self.addrs = [x for x in query_addrs(self.etcd_cli, self.etcd_key)]
+        self.conns = {}
+        for addr in self.addrs:
+            try:
+                host, port = addr.split(':')
+            except ValueError:
+                raise UqError('invalid rq address {}'.format(addr))
+            self.conns[addr] = redis.StrictRedis(host=host, port=port)
 
-    def push(self, key, value):
-        pass
+    @catch_redis_error
+    def _add(self, addr, data):
+        if not data['line']:
+            args = ['ADD', data['topic']]
+        else:
+            full_line_name = '{topic}/{line}'.format(**data)
+            args = ['ADD', full_line_name, data['recycle']]
 
-    def pop(self, key):
-        pass
+        try:
+            r = self.conns[addr].execute_command(*args)
+        except redis.exceptions.ResponseError as e:
+            errstr = str(e)
+            if 'Existed' in errstr:
+                return False, errstr
+            logging.error('add error: {}'.format(errstr))
+            return None
+        if r == 'OK':
+            return True, ''
+        return None
 
-    def remove(self, key):
-        pass
+    @catch_redis_error
+    def _push(self, addr, data):
+        self.conns[addr].set(data['key'], data['value'])
+        return True, ''
+
+    @catch_redis_error
+    def _pop(self, addrs, data):
+        nomsg = 0
+        for addr in addrs:
+            try:
+                r = self.conns[addr].execute_command('GET', data['key'])
+                cid = '{}/{}'.format(addr, r[1])
+                value = r[0]
+                return True, cid, value
+            except redis.exceptions.ResponseError as e:
+                if 'No Message' in str(e):
+                    nomsg += 1
+                else:
+                    logging.error('pop error: {}'.format(e))
+                    return None
+        if nomsg == len(addrs):
+            return False, '', 'no message'
+        return None
+
+    @catch_redis_error
+    def _remove(self, addr, data):
+        try:
+            self.conns[addr].execute_command('DEL', data['cid'])
+        except ValueError as e:
+            if str(e) == "invalid literal for int() with base 10: 'OK'":
+                # UQ returns 'OK' when messages(keys) were removed, while
+                # the standard redis returns the number of successful removed
+                # keys when executing DEL.
+                return True, ''
+            else:
+                raise
+        return True, ''
 
 
 class MemcacheConn(Conn):
