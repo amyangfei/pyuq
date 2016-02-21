@@ -8,6 +8,7 @@ requirements = [
     'python-etcd >= 0.4.3',
     'pymemcache >= 1.3.5',
     'redis >= 2.10.5',
+    'requests >= 2.9.1',
 ]
 
 f = open(os.path.join(os.path.dirname(__file__), 'README.rst'))
