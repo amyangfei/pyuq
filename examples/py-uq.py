@@ -4,7 +4,8 @@ import logging
 import datetime
 import argparse
 
-from uq.client import UqClient, UqClusterClient
+#  from uq.client import UqClient, UqClusterClient
+import uq
 
 
 def _strip(value):
@@ -25,7 +26,7 @@ def parseargs():
 
 def main(args):
     if args.etcd == '':
-        cli = UqClient(args.protocol, args.ip, args.port)
+        cli = uq.UqClient(args.protocol, args.ip, args.port)
     else:
         kwargs = {}
         if args.etcd.startswith('http'):
@@ -39,7 +40,7 @@ def main(args):
         else:
             etcd_host = netloc
             etcd_port = 4001
-        cli = UqClusterClient(
+        cli = uq.UqClusterClient(
             args.protocol, etcd_host, etcd_port, args.cluster, **kwargs)
 
     recycle = datetime.timedelta(seconds=10)

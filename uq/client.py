@@ -39,7 +39,7 @@ class UqClient(Client):
     Client implementation for communication with standalone uq server
     '''
 
-    def __init__(self, protocol, ip, port, **kwargs):
+    def __init__(self, protocol='http', ip='localhost', port=8808, **kwargs):
         self._ip = ip
         self._port = port
         self._kwargs = kwargs
@@ -62,7 +62,8 @@ class UqClusterClient(Client):
     Client implementation for communication with uq cluster
     '''
 
-    def __init__(self, protocol, etcd_host, etcd_port, etcd_key, **kwargs):
+    def __init__(self, protocol='http', etcd_host='127.0.0.1', etcd_port=4001,
+                 etcd_key='uq', **kwargs):
         self._etcd_host = etcd_host
         self._etcd_port = etcd_port
         self._etcd_key = etcd_key
