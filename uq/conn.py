@@ -7,6 +7,8 @@ import functools
 import etcd
 import redis
 import requests
+from pymemcache.client.base import Client as McClient
+from pymemcache.exceptions import MemcacheError, MemcacheClientError
 
 from .exceptions import UqError, UqNotImplementedError
 from .consts import MaxRetry
@@ -16,8 +18,13 @@ from .utils import timedetla_to_str
 def query_addrs(etcd_cli, etcd_key):
     try:
         resp = etcd_cli.read('/{}/servers'.format(etcd_key), sorted=True, recursive=False)
-    except etcd.EtcdKeyNotFound:
+    except etcd.EtcdKeyNotFound as e:
+        logging.error('server entrypoint not found: {}'.format(e))
         raise
+    except etcd.EtcdConnectionFailed as e:
+        logging.error('failed to connect etcd: {}'.format(e))
+        raise
+
     if not resp.dir:
         raise UqError('invalid etcd key')
     for child in resp.children:
@@ -321,6 +328,17 @@ class RedisConn(Conn):
         return True, ''
 
 
+def catch_memcache_error(func):
+    @functools.wraps(func)
+    def wrap_f(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except MemcacheError, e:
+            logging.error('memcache error: {}'.format(e))
+            return None
+    return wrap_f
+
+
 class MemcacheConn(Conn):
     '''
     Memcache protocol based connection between uq client and uq server
@@ -329,14 +347,57 @@ class MemcacheConn(Conn):
     def __init__(self, addr, etcd_cli, etcd_key):
         super(MemcacheConn, self).__init__(addr, etcd_cli, etcd_key)
 
-    def add(self, topic, line, recycle):
-        pass
+    def _update_conn_pool(self):
+        if self.etcd_cli is None:
+            self.addrs = [self.addr]
+        else:
+            self.addrs = [x for x in query_addrs(self.etcd_cli, self.etcd_key)]
+        self.conns = {}
+        for addr in self.addrs:
+            try:
+                host, port = addr.split(':')
+                port = int(port)
+            except ValueError:
+                raise UqError('invalid rq address {}'.format(addr))
+            self.conns[addr] = McClient((host, port))
 
-    def push(self, key, value):
-        pass
+    @catch_memcache_error
+    def _add(self, addr, data):
+        if not data['line']:
+            key = data['topic']
+            value = ''
+        else:
+            key = '{topic}/{line}'.format(**data)
+            value = data['recycle']
+        self.conns[addr].add(key, value)
+        return True, ''
 
-    def pop(self, key):
-        pass
+    @catch_memcache_error
+    def _push(self, addr, data):
+        self.conns[addr].set(data['key'], data['value'])
+        return True, ''
 
-    def remove(self, key):
-        pass
+    @catch_memcache_error
+    def _pop(self, addrs, data):
+        nomsg = 0
+        for addr in addrs:
+            try:
+                key = data['key']
+                r = self.conns[addr].get_many([key, 'id'])
+                cid = '{}/{}'.format(addr, r['id'])
+                value = r[key]
+                return True, cid, value
+            except MemcacheClientError as e:
+                if 'No Message' in str(e):
+                    nomsg += 1
+                else:
+                    logging.error('pop error: {}'.format(e))
+                    return None
+        if nomsg == len(addrs):
+            return False, '', 'no message'
+        return None
+
+    @catch_memcache_error
+    def _remove(self, addr, data):
+        self.conns[addr].delete(data['cid'])
+        return True, ''

@@ -7,7 +7,7 @@ exec(open('uq/version.py').read())
 
 requirements = [
     'python-etcd >= 0.4.3',
-    'python-memcached >= 1.57',
+    'pymemcache >= 1.3.5',
     'redis >= 2.10.5',
 ]
 
