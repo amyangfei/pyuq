@@ -1,7 +1,7 @@
 PyUQ
 ========
 
-Python client library for [UQ](https://github.com/buaazp/uq) cluster.
+Python client library for `UQ <https://github.com/buaazp/uq>`_ cluster.
 
 Installation
 ------------
@@ -30,7 +30,7 @@ Getting Started
 
     >>> import uq, datetime
     >>> cli = uq.UqClient(protocol='http', ip='127.0.0.1', port=8808)
-    >>> cli.add('foo', None, None)
+    >>> cli.add('foo')
     (True, '')
     >>> cli.add('foo', 'x', datetime.timedelta(seconds=10))
     (True, '')
@@ -38,3 +38,5 @@ Getting Started
     (True, '')
     >>> cli.pop('foo/x')
     (True, '127.0.0.1:8808/foo/x/0', u'hello')
+    >>> cli.remove('127.0.0.1:8808/foo/x/0')
+    (True, '')

@@ -21,7 +21,7 @@ class Client(object):
     def _init_uq_conn(self):
         raise UqNotImplementedError
 
-    def add(self, topic, line, recycle):
+    def add(self, topic, line=None, recycle=None):
         return self.conn.add(topic, line, recycle)
 
     def push(self, key, value):
