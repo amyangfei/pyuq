@@ -1,11 +1,9 @@
-from uq.client import UqClient, UqClusterClient
-from uq.conn import HttpConn, RedisConn, MemcacheConn
-from uq.utils import timedetla_to_str
-from uq.exceptions import UqError, UqNotImplementedError
-from uq.consts import ProtocolHttp, ProtocolRedis, ProtocolMemcache
+from .client import UqClient, UqClusterClient
+from .conn import HttpConn, RedisConn, MemcacheConn
+from .utils import timedetla_to_str
+from .exceptions import UqError, UqNotImplementedError
+from .consts import ProtocolHttp, ProtocolRedis, ProtocolMemcache
 
-
-__version__ = '0.1.0'
 
 __all__ = [
     'UqClient', 'UqClusterClient',

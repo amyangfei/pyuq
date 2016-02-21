@@ -8,3 +8,5 @@ tags
 
 env/
 venv/
+
+.coverage

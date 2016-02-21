@@ -165,7 +165,7 @@ def catch_requests_error(func):
     def wrap_f(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except requests.RequestException, e:
+        except requests.RequestException as e:
             logging.error('requests error: {}'.format(e))
             return None
     return wrap_f
@@ -242,7 +242,7 @@ def catch_redis_error(func):
     def wrap_f(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except redis.RedisError, e:
+        except redis.RedisError as e:
             logging.error('redis error: {}'.format(e))
             return None
     return wrap_f
@@ -333,7 +333,7 @@ def catch_memcache_error(func):
     def wrap_f(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except MemcacheError, e:
+        except MemcacheError as e:
             logging.error('memcache error: {}'.format(e))
             return None
     return wrap_f

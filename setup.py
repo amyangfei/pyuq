@@ -4,8 +4,6 @@
 import os
 from setuptools import setup, find_packages
 
-from uq import __version__
-
 requirements = [
     'python-etcd >= 0.4.3',
     'pymemcache >= 1.3.5',
@@ -15,6 +13,8 @@ requirements = [
 f = open(os.path.join(os.path.dirname(__file__), 'README.rst'))
 long_description = f.read()
 f.close()
+
+exec(open('uq/version.py').read())
 
 setup(
     name='uq',
@@ -29,5 +29,10 @@ setup(
     keywords=['Uq', 'message queue'],
     license='MIT',
     packages=find_packages(),
+    include_package_data=True,
     install_requires=requirements,
+    test_suite='nose.collector',
+    tests_require=[
+        'nose',
+    ]
 )

@@ -3,6 +3,9 @@ PyUQ
 
 Python client library for `UQ <https://github.com/buaazp/uq>`_ cluster.
 
+.. image:: https://travis-ci.org/amyangfei/pyuq.svg?branch=master
+    :target: https://travis-ci.org/amyangfei/pyuq
+
 Installation
 ------------
 

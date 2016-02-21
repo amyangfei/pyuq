@@ -1,0 +1,24 @@
+language: python
+python:
+  - "3.5"
+  - "2.7"
+before_install:
+  - mkdir -p /tmp/bin
+  - ./tests/build_etcd.sh v2.2.5
+  - ./tests/build_uq.sh
+install:
+  - pip install coveralls
+before_script:
+  - export PATH=$PATH:/tmp/bin
+  - mkdir -p /tmp/http8001
+  - cd /tmp/http8001
+  - uq -protocol http -port 8001 -admin-port 8101 &
+  - mkdir -p /tmp/etcd4001
+  - cd /tmp/etcd4001
+  - etcd &
+  - cd ${TRAVIS_BUILD_DIR}
+script:
+  coverage run --source=uq setup.py test
+after_success:
+  coveralls
+env: TRAVIS=True
