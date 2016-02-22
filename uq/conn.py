@@ -52,16 +52,16 @@ class Conn(object):
     def _update_conn_pool(self):
         raise UqNotImplementedError
 
-    def _add(addr, data):
+    def _add(self, addr, data):
         raise UqNotImplementedError
 
-    def _push(addr, data):
+    def _push(self, addr, data):
         raise UqNotImplementedError
 
-    def _pop(addr, data):
+    def _pop(self, addrs, data):
         raise UqNotImplementedError
 
-    def _remove(addr, data):
+    def _remove(self, addr, data):
         raise UqNotImplementedError
 
     def add(self, topic, line, recycle):
