@@ -14,8 +14,8 @@ class TestUqClientApi(unittest.TestCase):
         self.assertEqual(resp[0], True)
         self.assertEqual(resp[1], '')
 
-    def test_http_api(self):
-        cli = uq.UqClient(protocol='http', ip='localhost', port='8001')
+    def _test_api(self, protocol, port):
+        cli = uq.UqClient(protocol=protocol, ip='localhost', port=port)
         r = cli.add('foo')
         self.check_default_resp(r)
         r = cli.add('foo', 'x', datetime.timedelta(seconds=10))
@@ -26,3 +26,12 @@ class TestUqClientApi(unittest.TestCase):
         self.assertEqual(r[2], 'hello')
         r = cli.remove(r[1])
         self.check_default_resp(r)
+
+    def test_http_api(self):
+        self._test_api(uq.ProtocolHttp, 8001)
+
+    def test_redis_api(self):
+        self._test_api(uq.ProtocolRedis, 8002)
+
+    def test_memcache_api(self):
+        self._test_api(uq.ProtocolMemcache, 8003)

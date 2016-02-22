@@ -13,6 +13,12 @@ before_script:
   - mkdir -p /tmp/http8001
   - cd /tmp/http8001
   - uq -protocol http -port 8001 -admin-port 8101 &
+  - mkdir -p /tmp/http8002
+  - cd /tmp/http8002
+  - uq -protocol redis -port 8002 -admin-port 8102 &
+  - mkdir -p /tmp/http8003
+  - cd /tmp/http8003
+  - uq -protocol mc -port 8003 -admin-port 8103 &
   - mkdir -p /tmp/etcd4001
   - cd /tmp/etcd4001
   - etcd &
