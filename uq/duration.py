@@ -10,22 +10,22 @@ copyright by https://github.com/icholy/Duration.py
 import re
 import datetime
 
-_nanosecond_size  = 1
+_nanosecond_size = 1
 _microsecond_size = 1000 * _nanosecond_size
 _millisecond_size = 1000 * _microsecond_size
-_second_size      = 1000 * _millisecond_size
-_minute_size      = 60   * _second_size
-_hour_size        = 60   * _minute_size
+_second_size = 1000 * _millisecond_size
+_minute_size = 60 * _second_size
+_hour_size = 60 * _minute_size
 
 units = {
-    "ns" : _nanosecond_size,
-    "us" : _microsecond_size,
-    "µs" : _microsecond_size,
-    "μs" : _microsecond_size,
-    "ms" : _millisecond_size,
-    "s"  : _second_size,
-    "m"  : _minute_size,
-    "h"  : _hour_size
+    "ns": _nanosecond_size,
+    "us": _microsecond_size,
+    "µs": _microsecond_size,
+    "μs": _microsecond_size,
+    "ms": _millisecond_size,
+    "s": _second_size,
+    "m": _minute_size,
+    "h": _hour_size
 }
 
 

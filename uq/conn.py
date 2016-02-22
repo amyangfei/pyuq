@@ -17,7 +17,8 @@ from .utils import timedetla_to_str
 
 def query_addrs(etcd_cli, etcd_key):
     try:
-        resp = etcd_cli.read('/{}/servers'.format(etcd_key), sorted=True, recursive=False)
+        resp = etcd_cli.read(
+            '/{}/servers'.format(etcd_key), sorted=True, recursive=False)
     except etcd.EtcdKeyNotFound as e:
         logging.error('server entrypoint not found: {}'.format(e))
         raise

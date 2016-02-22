@@ -81,7 +81,7 @@ class UqClusterClient(Client):
     @property
     def etcd_cli(self):
         if self._etcd_cli is None:
-            self._etcd_cli= etcd.Client(
+            self._etcd_cli = etcd.Client(
                 host=self._etcd_host, port=self._etcd_port, **self._kwargs)
         return self._etcd_cli
 
