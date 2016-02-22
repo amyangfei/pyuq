@@ -69,7 +69,7 @@ class UqClusterClient(Client):
         self._etcd_key = etcd_key
         self._etcd_cli = None
         _kwargs = {}
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             # use prefix '_etcd_' to avoid name confliction with
             # positional arguments
             if k.startswith('_etcd_'):
