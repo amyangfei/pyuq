@@ -6,6 +6,7 @@ before_install:
   - mkdir -p /tmp/bin
   - ./tests/build_etcd.sh v2.2.5
   - ./tests/build_uq.sh
+  - cp ./tests/wait_etcd.sh /tmp/bin
 install:
   - pip install coveralls
 before_script:
@@ -22,6 +23,12 @@ before_script:
   - mkdir -p /tmp/etcd4001
   - cd /tmp/etcd4001
   - etcd &
+  - wait_etcd.sh
+  - mkdir -p /tmp/http_cluster
+  - cd /tmp/http_cluster
+  - uq -port 8011 -admin-port 8111 -dir ./uq1 -etcd http://127.0.0.1:4001 -cluster uq -protocol http &
+  - uq -port 8012 -admin-port 8112 -dir ./uq2 -etcd http://127.0.0.1:4001 -cluster uq -protocol http &
+  - uq -port 8013 -admin-port 8113 -dir ./uq3 -etcd http://127.0.0.1:4001 -cluster uq -protocol http &
   - cd ${TRAVIS_BUILD_DIR}
 script:
   coverage run --source=uq setup.py test
