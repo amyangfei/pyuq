@@ -9,6 +9,8 @@ import uq
 
 
 def _strip(value):
+    if isinstance(value, bytes):
+        value = value.decode('utf-8')
     return value.strip('\r\n') if hasattr(value, 'strip') else value
 
 

@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import sys
 import random
 import logging
 import functools
@@ -219,7 +220,7 @@ class HttpConn(Conn):
                 nomsg += 1
             elif r.status_code == requests.codes.ok:
                 cid = '{}/{}'.format(addr, r.headers.get('X-UQ-ID'))
-                value = r.text
+                value = r.content
                 return True, cid, value
             else:
                 logging.error('pop error: {}'.format(r.text))
@@ -286,7 +287,7 @@ class RedisConn(Conn):
                 return False, errstr
             logging.error('add error: {}'.format(errstr))
             return None
-        if r == 'OK':
+        if r == b'OK':
             return True, ''
         return None
 
@@ -301,7 +302,7 @@ class RedisConn(Conn):
         for addr in addrs:
             try:
                 r = self.conns[addr].execute_command('GET', data['key'])
-                cid = '{}/{}'.format(addr, r[1])
+                cid = '{}/{}'.format(addr, r[1].decode('utf-8'))
                 value = r[0]
                 return True, cid, value
             except redis.exceptions.ResponseError as e:
@@ -319,13 +320,16 @@ class RedisConn(Conn):
         try:
             self.conns[addr].execute_command('DEL', data['cid'])
         except ValueError as e:
-            if str(e) == "invalid literal for int() with base 10: 'OK'":
-                # UQ returns 'OK' when messages(keys) were removed, while
-                # the standard redis returns the number of successful removed
-                # keys when executing DEL.
-                return True, ''
+            # UQ returns 'OK' when messages(keys) were removed, while
+            # the standard redis returns the number of successful removed
+            # keys when executing DEL.
+            if sys.version_info[0] < 3:
+                if str(e) == "invalid literal for int() with base 10: 'OK'":
+                    return True, ''
             else:
-                raise
+                if str(e) == "invalid literal for int() with base 10: b'OK'":
+                    return True, ''
+            raise
         return True, ''
 
 
@@ -385,7 +389,7 @@ class MemcacheConn(Conn):
             try:
                 key = data['key']
                 r = self.conns[addr].get_many([key, 'id'])
-                cid = '{}/{}'.format(addr, r['id'])
+                cid = '{}/{}'.format(addr, r['id'].decode('utf-8'))
                 value = r[key]
                 return True, cid, value
             except MemcacheClientError as e:
