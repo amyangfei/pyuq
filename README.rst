@@ -3,6 +3,8 @@ PyUQ
 
 Python client library for `UQ <https://github.com/buaazp/uq>`_ cluster.
 
+.. image:: https://badge.fury.io/py/uq.svg
+    :target: https://badge.fury.io/py/uq
 .. image:: https://travis-ci.org/amyangfei/pyuq.svg?branch=master
     :target: https://travis-ci.org/amyangfei/pyuq
 
