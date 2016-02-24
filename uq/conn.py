@@ -8,12 +8,12 @@ import functools
 import etcd
 import redis
 import requests
-from pymemcache.client.base import Client as McClient
 from pymemcache.exceptions import MemcacheError, MemcacheClientError
 
 from .exceptions import UqError, UqNotImplementedError
 from .consts import MaxRetry
 from .utils import timedetla_to_str
+from .mc_mock import MockMcClient
 
 
 def query_addrs(etcd_cli, etcd_key):
@@ -364,7 +364,7 @@ class MemcacheConn(Conn):
                 port = int(port)
             except ValueError:
                 raise UqError('invalid rq address {}'.format(addr))
-            self.conns[addr] = McClient((host, port))
+            self.conns[addr] = MockMcClient((host, port))
 
     @catch_memcache_error
     def _add(self, addr, data):

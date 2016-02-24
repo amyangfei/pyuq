@@ -37,13 +37,8 @@ class TestUqClientApi(unittest.TestCase):
     def test_redis_api(self):
         self._test_api(uq.ProtocolRedis, 8002)
 
-    '''
-    FIXME:
-        pymemcache get_many command may rearrange the keys sequence,
-        this leads uq library pop processing with error.
-    '''
-    # def test_memcache_api(self):
-    #     self._test_api(uq.ProtocolMemcache, 8003)
+    def test_memcache_api(self):
+        self._test_api(uq.ProtocolMemcache, 8003)
 
 
 class TestUqClusterApi(unittest.TestCase):
